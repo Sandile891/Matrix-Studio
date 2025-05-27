@@ -1,0 +1,645 @@
+<!--DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Robotics Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ace-builds@1.4.12/src-min-noconflict/ace.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.155.0/examples/js/loaders/GLTFLoader.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.155.0/examples/js/controls/OrbitControls.min.js"></script>
+
+    <style>
+        #simulator-container {
+            position: relative;
+            width: 100%;
+            height: 600px;
+            border: 2px solid #4a5568;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        #code-editor {
+            height: 400px;
+            width: 100%;
+            font-size: 14px;
+        }
+        .mission-tile {
+            transition: all 0.3s ease;
+        }
+        .mission-tile:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: #555;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        #robot-status {
+            transition: all 0.3s ease;
+        }
+        #robot-status.running {
+            background-color: #48bb78;
+            color: white;
+        }
+        #robot-status.error {
+            background-color: #f56565;
+            color: white;
+        }
+        #robot-status.idle {
+            background-color: #4299e1;
+            color: white;
+        }
+    </style>
+</head>
+<!--body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <header class="mb-8">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-4xl font-bold text-blue-800">RoboSim Advanced</h1>
+                    <p class="text-gray-600">Virtual Robotics Programming Platform</p>
+                </div>
+                <div class="flex space-x-4">
+                    <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center">
+                        <i class="fas fa-user-plus mr-2"></i> Sign Up
+                    </button>
+                    <button class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg flex items-center">
+                        <i class="fas fa-sign-in-alt mr-2"></i> Login
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!- Left Panel - Programming Interface >
+            <div class="lg:col-span-2 bg-white rounded-xl shadow-lg p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-semibold text-gray-800">Python Programming Interface</h2>
+                    <div class="flex space-x-2">
+                        <button id="run-btn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center">
+                            <i class="fas fa-play mr-2"></i> Run Program
+                        </button>
+                        <button id="stop-btn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center">
+                            <i class="fas fa-stop mr-2"></i> Stop
+                        </button>
+                        <button id="save-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center">
+                            <i class="fas fa-save mr-2"></i> Save
+                        </button>
+                    </div>
+                </div>
+
+                <div id="code-editor"># Welcome to RoboSim Advanced!
+# Write your robot program here using Python
+
+from robot import Robot
+from time import sleep
+
+# Initialize the robot
+robot = Robot()
+
+# Example movement program
+def main():
+    # Move forward for 2 seconds
+    robot.drive(100, 100)
+    sleep(2)
+    
+    # Turn right
+    robot.drive(100, -100)
+    sleep(0.5)
+    
+    # Move forward again
+    robot.drive(100, 100)
+    sleep(1.5)
+    
+    # Stop
+    robot.stop()
+
+# Run the program
+if __name__ == "__main__":
+    main()</div>
+
+                <div class="mt-4">
+                    <h3 class="text-lg font-medium text-gray-700 mb-2">Program Output</h3>
+                    <div id="output-console" class="bg-gray-800 text-green-400 p-4 rounded-lg font-mono h-32 overflow-y-auto">
+                        <p>> Ready to execute program...</p>
+                    </div>
+                </div>
+            </div-->
+
+            <!-- Right Panel - Simulator and Controls >
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-semibold text-gray-800">3D Simulator</h2>
+                    <div id="robot-status" class="px-3 py-1 rounded-full text-sm idle">
+                        <i class="fas fa-robot mr-1"></i> <span>Idle</span>
+                    </div>
+                </div>
+
+                <div id="simulator-container"-->
+                    <!-- 3D Simulator will be rendered here >
+                    <div id="simulator-loading" class="absolute inset-0 flex items-center justify-center bg-gray-200">
+                        <div class="text-center">
+                            <i class="fas fa-spinner fa-spin text-4xl text-blue-600 mb-2"></i>
+                            <p class="text-gray-700">Loading 3D simulator...</p>
+                        </div>
+                    </div>
+                </div-->
+
+                <!--div class="mt-4">
+                    <h3 class="text-lg font-medium text-gray-700 mb-2">Environment Selection</h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button class="env-btn bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-2 rounded-lg flex items-center justify-center" data-env="fll">
+                            <i class="fas fa-robot mr-2"></i> FLL Challenge
+                        </button>
+                        <button class="env-btn bg-teal-100 hover:bg-teal-200 text-teal-800 px-3 py-2 rounded-lg flex items-center justify-center" data-env="underwater">
+                            <i class="fas fa-water mr-2"></i> Underwater
+                        </button>
+                        <button class="env-btn bg-purple-100 hover:bg-purple-200 text-purple-800 px-3 py-2 rounded-lg flex items-center justify-center" data-env="space">
+                            <i class="fas fa-rocket mr-2"></i> Space
+                        </button>
+                        <button class="env-btn bg-green-100 hover:bg-green-200 text-green-800 px-3 py-2 rounded-lg flex items-center justify-center" data-env="custom">
+                            <i class="fas fa-cog mr-2"></i> Custom
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <h3 class="text-lg font-medium text-gray-700 mb-2">Robot Controls</h3>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button class="control-btn bg-gray-200 hover:bg-gray-300 text-gray-800 p-2 rounded-lg" data-action="forward">
+                            <i class="fas fa-arrow-up"></i>
+                        </button>
+                        <button class="control-btn bg-gray-200 hover:bg-gray-300 text-gray-800 p-2 rounded-lg" data-action="left">
+                            <i class="fas fa-arrow-left"></i>
+                        </button>
+                        <button class="control-btn bg-gray-200 hover:bg-gray-300 text-gray-800 p-2 rounded-lg" data-action="stop">
+                            <i class="fas fa-stop"></i>
+                        </button>
+                        <button class="control-btn bg-gray-200 hover:bg-gray-300 text-gray-800 p-2 rounded-lg" data-action="right">
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                        <button class="control-btn bg-gray-200 hover:bg-gray-300 text-gray-800 p-2 rounded-lg" data-action="backward">
+                            <i class="fas fa-arrow-down"></i>
+                        </button>
+                        <button class="control-btn bg-gray-200 hover:bg-gray-300 text-gray-800 p-2 rounded-lg" data-action="grab">
+                            <i class="fas fa-hand-paper"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div-->
+
+        <!-- Mission Challenges Section >
+        <div class="mt-8 bg-white rounded-xl shadow-lg p-6">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Mission Challenges</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="mission-tile bg-blue-50 rounded-lg p-4 border border-blue-200 cursor-pointer">
+                    <div class="flex justify-between items-start">
+                        <h3 class="text-lg font-medium text-blue-800">Underwater Exploration</h3>
+                        <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">SUBMERGED</span>
+                    </div>
+                    <p class="text-gray-600 mt-2 text-sm">Navigate through underwater obstacles and collect artifacts.</p>
+                    <div class="mt-4 flex justify-between items-center">
+                        <span class="text-xs text-gray-500"><i class="fas fa-star mr-1"></i> Difficulty: Medium</span>
+                        <button class="load-mission-btn text-blue-600 hover:text-blue-800 text-sm font-medium" data-mission="underwater">
+                            Load Mission <i class="fas fa-arrow-right ml-1"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="mission-tile bg-green-50 rounded-lg p-4 border border-green-200 cursor-pointer">
+                    <div class="flex justify-between items-start">
+                        <h3 class="text-lg font-medium text-green-800">Space Delivery</h3>
+                        <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">ORBIT</span>
+                    </div>
+                    <p class="text-gray-600 mt-2 text-sm">Transport supplies between space stations in zero gravity.</p>
+                    <div class="mt-4 flex justify-between items-center">
+                        <span class="text-xs text-gray-500"><i class="fas fa-star mr-1"></i> Difficulty: Hard</span>
+                        <button class="load-mission-btn text-green-600 hover:text-green-800 text-sm font-medium" data-mission="space">
+                            Load Mission <i class="fas fa-arrow-right ml-1"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="mission-tile bg-purple-50 rounded-lg p-4 border border-purple-200 cursor-pointer">
+                    <div class="flex justify-between items-start">
+                        <h3 class="text-lg font-medium text-purple-800">FLL Challenge</h3>
+                        <span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">COMPETITION</span>
+                    </div>
+                    <p class="text-gray-600 mt-2 text-sm">Complete standard FIRST LEGO League missions on the competition table.</p>
+                    <div class="mt-4 flex justify-between items-center">
+                        <span class="text-xs text-gray-500"><i class="fas fa-star mr-1"></i> Difficulty: Easy</span>
+                        <button class="load-mission-btn text-purple-600 hover:text-purple-800 text-sm font-medium" data-mission="fll">
+                            Load Mission <i class="fas fa-arrow-right ml-1"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div-->
+
+        <!-- Documentation Section >
+        <div class="mt-8 bg-white rounded-xl shadow-lg p-6">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Robot API Documentation</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h3 class="text-lg font-medium text-gray-700 mb-2">Movement</h3>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <div class="mb-3">
+                            <code class="bg-gray-200 px-2 py-1 rounded text-sm">robot.drive(left_speed, right_speed)</code>
+                            <p class="text-gray-600 text-sm mt-1">Sets the speed of left and right motors (-100 to 100)</p>
+                        </div>
+                        <div class="mb-3">
+                            <code class="bg-gray-200 px-2 py-1 rounded text-sm">robot.stop()</code>
+                            <p class="text-gray-600 text-sm mt-1">Stops all motors</p>
+                        </div>
+                        <div>
+                            <code class="bg-gray-200 px-2 py-1 rounded text-sm">robot.move_arm(position)</code>
+                            <p class="text-gray-600 text-sm mt-1">Moves arm to position (0-100)</p>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-lg font-medium text-gray-700 mb-2">Sensors</h3>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <div class="mb-3">
+                            <code class="bg-gray-200 px-2 py-1 rounded text-sm">robot.get_distance()</code>
+                            <p class="text-gray-600 text-sm mt-1">Returns distance to nearest obstacle in cm</p>
+                        </div>
+                        <div class="mb-3">
+                            <code class="bg-gray-200 px-2 py-1 rounded text-sm">robot.get_color()</code>
+                            <p class="text-gray-600 text-sm mt-1">Returns detected color (as string)</p>
+                        </div>
+                        <div>
+                            <code class="bg-gray-200 px-2 py-1 rounded text-sm">robot.get_gyro()</code>
+                            <p class="text-gray-600 text-sm mt-1">Returns current orientation in degrees</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div-->
+
+    <!--script>
+        // Initialize code editor
+        const editor = ace.edit("code-editor");
+        editor.setTheme("ace/theme/monokai");
+        editor.session.setMode("ace/mode/python");
+        editor.setOptions({
+            fontSize: "14px",
+            enableBasicAutocompletion: true,
+            enableLiveAutocompletion: true
+        });
+
+        // Simulator setup
+        let scene, camera, renderer, robotModel;
+        let isSimulatorRunning = false;
+        
+        function initSimulator() {
+            // Hide loading screen
+            document.getElementById('simulator-loading').style.display = 'none';
+            
+            // Create Three.js scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf0f0f0);
+            
+            // Camera setup
+            camera = new THREE.PerspectiveCamera(75, document.getElementById('simulator-container').clientWidth / 
+                document.getElementById('simulator-container').clientHeight, 0.1, 1000);
+            camera.position.set(5, 5, 5);
+            camera.lookAt(0, 0, 0);
+            
+            // Renderer setup
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(document.getElementById('simulator-container').clientWidth, 
+                document.getElementById('simulator-container').clientHeight);
+            document.getElementById('simulator-container').appendChild(renderer.domElement);
+            
+            // Add lights
+            const ambientLight = new THREE.AmbientLight(0x404040);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+            directionalLight.position.set(1, 1, 1);
+            scene.add(directionalLight);
+            
+            // Add simple robot model (cube for demo)
+            //const geometry = new THREE.BoxGeometry(1, 0.5, 1);
+            //const material = new THREE.MeshPhongMaterial({ color: 0x3498db });
+            //robotModel = new THREE.Mesh(geometry, material);
+            //scene.add(robotModel);
+            
+            // Add simple ground
+            const groundGeometry = new THREE.PlaneGeometry(10, 10);
+            const groundMaterial = new THREE.MeshStandardMaterial({ color: 0xcccccc });
+            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+            ground.rotation.x = -Math.PI / 2;
+            scene.add(ground);
+            
+            // Add grid helper
+            const gridHelper = new THREE.GridHelper(10, 10);
+            scene.add(gridHelper);
+            
+            // Start animation loop
+            animate();
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+            
+            // Simple rotation for demo
+            if (isSimulatorRunning) {
+                robotModel.rotation.y += 0.01;
+            }
+        }
+        
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            camera.aspect = document.getElementById('simulator-container').clientWidth / 
+                document.getElementById('simulator-container').clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(document.getElementById('simulator-container').clientWidth, 
+                document.getElementById('simulator-container').clientHeight);
+        });
+        
+        // Initialize simulator after page load
+        window.addEventListener('load', function() {
+            // Simulate loading time
+            setTimeout(initSimulator, 1500);
+        });
+        
+        // Button event handlers
+        document.getElementById('run-btn').addEventListener('click', function() {
+            const code = editor.getValue();
+            document.getElementById('robot-status').className = 'px-3 py-1 rounded-full text-sm running';
+            document.getElementById('robot-status').innerHTML = '<i class="fas fa-robot mr-1"></i> <span>Running</span>';
+            isSimulatorRunning = true;
+            
+            // Simulate code execution
+            document.getElementById('output-console').innerHTML = 
+                '<p>> Starting program execution...</p>' +
+                '<p>> Moving forward at speed 100</p>' +
+                '<p>> Turning right</p>' +
+                '<p>> Moving forward at speed 100</p>' +
+                '<p>> Program completed successfully!</p>';
+            
+            // Scroll to bottom of output
+            const outputConsole = document.getElementById('output-console');
+            outputConsole.scrollTop = outputConsole.scrollHeight;
+        });
+        
+        document.getElementById('stop-btn').addEventListener('click', function() {
+            document.getElementById('robot-status').className = 'px-3 py-1 rounded-full text-sm idle';
+            document.getElementById('robot-status').innerHTML = '<i class="fas fa-robot mr-1"></i> <span>Idle</span>';
+            isSimulatorRunning = false;
+            
+            document.getElementById('output-console').innerHTML += '<p>> Program stopped by user</p>';
+            
+            // Scroll to bottom of output
+            const outputConsole = document.getElementById('output-console');
+            outputConsole.scrollTop = outputConsole.scrollHeight;
+        });
+        
+        document.getElementById('save-btn').addEventListener('click', function() {
+            // In a real app, this would save to server/local storage
+            document.getElementById('output-console').innerHTML += '<p>> Program saved successfully</p>';
+            
+            // Scroll to bottom of output
+            const outputConsole = document.getElementById('output-console');
+            outputConsole.scrollTop = outputConsole.scrollHeight;
+        });
+        
+        // Environment selection
+        document.querySelectorAll('.env-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const env = this.getAttribute('data-env');
+                let envName = '';
+                
+                switch(env) {
+                    case 'fll':
+                        envName = 'FLL Challenge Field';
+                        scene.background = new THREE.Color(0xeeeeee);
+                        break;
+                    case 'underwater':
+                        envName = 'Underwater Environment';
+                        scene.background = new THREE.Color(0x1a6a8a);
+                        break;
+                    case 'space':
+                        envName = 'Space Station';
+                        scene.background = new THREE.Color(0x000033);
+                        break;
+                    case 'custom':
+                        envName = 'Custom Environment';
+                        scene.background = new THREE.Color(0x333333);
+                        break;
+                }
+                
+                document.getElementById('output-console').innerHTML += `<p>> Environment changed to: ${envName}</p>`;
+                
+                // Scroll to bottom of output
+                const outputConsole = document.getElementById('output-console');
+                outputConsole.scrollTop = outputConsole.scrollHeight;
+            });
+        });
+        
+        // Manual controls
+        document.querySelectorAll('.control-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const action = this.getAttribute('data-action');
+                let message = '';
+                
+                switch(action) {
+                    case 'forward':
+                        message = 'Moving forward';
+                        break;
+                    case 'backward':
+                        message = 'Moving backward';
+                        break;
+                    case 'left':
+                        message = 'Turning left';
+                        break;
+                    case 'right':
+                        message = 'Turning right';
+                        break;
+                    case 'stop':
+                        message = 'Stopping all motors';
+                        break;
+                    case 'grab':
+                        message = 'Activating grabber';
+                        break;
+                }
+                
+                document.getElementById('output-console').innerHTML += `<p>> ${message}</p>`;
+                
+                // Scroll to bottom of output
+                const outputConsole = document.getElementById('output-console');
+                outputConsole.scrollTop = outputConsole.scrollHeight;
+            });
+        });
+        
+        // Load mission
+        document.querySelectorAll('.load-mission-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const mission = this.getAttribute('data-mission');
+                let missionName = '';
+                
+                switch(mission) {
+                    case 'underwater':
+                        missionName = 'Underwater Exploration';
+                        break;
+                    case 'space':
+                        missionName = 'Space Delivery';
+                        break;
+                    case 'fll':
+                        missionName = 'FLL Challenge';
+                        break;
+                }
+                
+                document.getElementById('output-console').innerHTML += `<p>> Loading mission: ${missionName}</p>`;
+                
+                // Scroll to bottom of output
+                const outputConsole = document.getElementById('output-console');
+                outputConsole.scrollTop = outputConsole.scrollHeight;
+            });
+        });
+    </script>
+
+</body>
+</html-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>LEGO EV3 Robot Viewer</title>
+  <style>
+    body { margin: 0; overflow: hidden; font-family: sans-serif; }
+    h1 {
+      position: absolute;
+      top: 10px;
+      left: 20px;
+      color: white;
+      z-index: 1;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 10px;
+      border-radius: 5px;
+    }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <h1>LEGO EV3 Robot Viewer</h1>
+
+  <!-- Three.js and dependencies -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/examples/js/loaders/GLTFLoader.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/examples/js/controls/OrbitControls.min.js"></script>
+
+  <script>
+    let scene, camera, renderer, controls;
+
+    init();
+    animate();
+
+    function init() {
+      // Scene and background
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x202020);
+
+      // Camera
+      camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+      camera.position.set(3, 2, 5);
+
+      // Renderer
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+
+      // Controls
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+
+      // Lighting
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+      scene.add(ambientLight);
+
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+      directionalLight.position.set(5, 10, 7.5);
+      scene.add(directionalLight);
+
+      // Load GLB model
+      const loader = new THREE.GLTFLoader();
+      loader.load('lego.glb',
+        function (gltf) {
+          const model = gltf.scene;
+          model.scale.set(0.5, 0.5, 0.5);
+          scene.add(model);
+
+          // Optional: Bounding box for debugging
+          const boxHelper = new THREE.BoxHelper(model, 0xff0000);
+          scene.add(boxHelper);
+
+          // Center camera to fit model
+          const box = new THREE.Box3().setFromObject(model);
+          const size = box.getSize(new THREE.Vector3()).length();
+          const center = box.getCenter(new THREE.Vector3());
+
+          controls.reset();
+          camera.position.copy(center);
+          camera.position.z += size * 1.5;
+          camera.lookAt(center);
+          controls.target.copy(center);
+
+          model.traverse((child) => {
+            if (child.isMesh) {
+              child.castShadow = true;
+              child.receiveShadow = true;
+            }
+          });
+
+          console.log("✅ Model loaded successfully");
+        },
+        undefined,
+        function (error) {
+          console.error('❌ Error loading model:', error);
+        }
+      );
+
+      // Handle window resize
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+  </script>
+</body>
+</html>
